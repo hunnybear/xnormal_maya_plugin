@@ -20,6 +20,7 @@ print_error = OpenMaya.MGlobal.displayError
 # Node Definition
 # -----------------------------------------------------------------------------
 
+
 class BakeLayer( OpenMayaMPx.MPxObjectSet ):
   PLUGIN_NODE_NAME = 'BakeLayer'
   PLUGIN_NODE_ID = OpenMaya.MTypeId( 0x00333 )

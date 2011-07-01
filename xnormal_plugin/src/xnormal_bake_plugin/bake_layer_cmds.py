@@ -91,6 +91,7 @@ class BakeLayerCmdBase( OpenMayaMPx.MPxCommand ):
     out_node_fn = OpenMaya.MFnDependencyNode( )
     out_node_fn.setObject( out_node )
     
+    
     in_attr = self.add_conn_attribute( in_node_fn,
                                        in_attr_name,
                                        in_attr_long )
@@ -104,8 +105,6 @@ class BakeLayerCmdBase( OpenMayaMPx.MPxCommand ):
                                        in_attr ) )
     
     fn_dg_modify.doIt()
-    
-    
 
 class BakeLayerCmd( BakeLayerCmdBase ):
   """
@@ -276,7 +275,6 @@ class ConnectBakeLayersCmd( BakeLayerCmdBase ):
   LOW_FLAG_LONG = '-lowLayer'
   
   def __init__( self ):
-    
     OpenMayaMPx.MPxCommand.__init__(self)
     
     self.__isQueryUsed = True
@@ -290,7 +288,7 @@ class ConnectBakeLayersCmd( BakeLayerCmdBase ):
     
     # Used to modify nodes/connections between nodes
     self.__dg_modify = OpenMaya.MDGModifier( )
-  
+       
   def doIt(self, args):
     print_info( "doing connect")
     # parse the arguments
@@ -302,6 +300,7 @@ class ConnectBakeLayersCmd( BakeLayerCmdBase ):
     else:
       
       selection = OpenMaya.MSelectionList( )
+      
       high_layer = OpenMaya.MObject( )
       low_layer = OpenMaya.MObject( )
       high_layer_fn = OpenMaya.MFnDependencyNode( )
@@ -310,14 +309,27 @@ class ConnectBakeLayersCmd( BakeLayerCmdBase ):
       selection.add( arg_data.flagArgumentString( self.LOW_FLAG, 0 ) )
       selection.getDependNode( 0, low_layer )
       low_layer_fn.setObject( low_layer )
+      print_info( dir( bake_layer_node))
+      if not low_layer_fn.typeId( ) == bake_layer_node.BakeLayer.PLUGIN_NODE_ID:
+        raise Exception( 'The provided node {0} is not of type{1}.'.format(
+                          arg_data.flagArgumentString( self.LOW_FLAG, 0 ),
+                          bake_layer_node.BakeLayer.PLUGIN_NODE_NAME ) )
       selection.clear( )
       
       selection.add( arg_data.flagArgumentString( self.HIGH_FLAG, 0 ) )
       selection.getDependNode( 0, high_layer )
       high_layer_fn.setObject( high_layer )
+      if not high_layer_fn.typeId( ) == bake_layer_node.BakeLayer.PLUGIN_NODE_ID:
+        raise Exception( 'The provided node {0} is not of type{1}.'.format(
+                          arg_data.flagArgumentString( self.LOW_FLAG, 0 ),
+                          bake_layer_node.BakeLayer.PLUGIN_NODE_NAME ) )
       selection.clear( )
       # Check that both layers are bake layers
-
+      
+      
+      
+      for x in dir( high_layer ):
+        print_info( x )
       # Connect the two layers
       
       print_info( 'connecting bake layers')
@@ -325,18 +337,13 @@ class ConnectBakeLayersCmd( BakeLayerCmdBase ):
                           bake_layer_node.BakeLayer.HIGH_CONNECT_NAME,
                           high_layer,
                           bake_layer_node.BakeLayer.LOW_CONNECT_NAME,
-                          bake_layer_node.BakeLayer.LOW_CONNECT_NAMELONG)
+                          bake_layer_node.BakeLayer.LOW_CONNECT_LONGNAME )
   
       self.redoIt( )
   
   def redoIt( self ):
     print_info( "redoing connect")
     pass
-
-  
-  def __get_next_plug( self, parent, child_name ):
-    pass 
-    #parent.
     
        
   @classmethod
