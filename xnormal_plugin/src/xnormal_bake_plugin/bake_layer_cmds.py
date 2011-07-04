@@ -217,6 +217,10 @@ class BakeLayerCmd( BakeLayerCmdBase ):
       self.__this_node_fn.setObject( new_bake_layer )
       
       self.__dg_modify.renameNode( new_bake_layer, self.__name_arg )
+      
+      self.__dg_modify.doIt( )
+      
+      self.setResult( self.__this_node_fn.name( ) )
     
     else:
       sel_list_node = OpenMaya.MSelectionList( )
