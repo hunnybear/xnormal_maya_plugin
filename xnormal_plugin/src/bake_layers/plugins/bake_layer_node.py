@@ -127,8 +127,8 @@ class BakeLayer( OpenMayaMPx.MPxObjectSet ):
     cls.a_max_ray_distance = num_attr.create( cls.MAX_RAY_LONGNAME,
                                               cls.MAX_RAY_NAME,
                                               OpenMaya.MFnNumericData.k2Float,
-                                              2, 2 
-                                              )
+                                              1 )
+                                              
     num_attr.setWritable( True )
     num_attr.setStorable( True )
     num_attr.setReadable( True )

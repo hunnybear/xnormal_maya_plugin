@@ -4,9 +4,12 @@ Bake Layer Window main UI
 Tyler Good 2011 tylergood@tylergood.net
 """
 
+import os
+
 import pymel.core as pmc
 import maya.OpenMaya as OpenMaya
 
+import bake_layers
 import utils
 reload( utils )
 
@@ -14,12 +17,14 @@ print_info = OpenMaya.MGlobal.displayInfo
 print_warning = OpenMaya.MGlobal.displayWarning
 print_error = OpenMaya.MGlobal.displayError
 
+import quick_edit_window
+reload( quick_edit_window )
 import bake_layer_tools
 reload( bake_layer_tools )
 
 # Meta Data
-from xnormal_bake_plugin.tool_info import TOOL_NAME
-from xnormal_bake_plugin.tool_info import VERSION_NUMBER
+from tool_info import TOOL_NAME
+from tool_info import VERSION_NUMBER
 
 class BakeLayerWindow( object ):
   """
@@ -98,7 +103,7 @@ class BakeLayerWindow( object ):
     self.__layer_tree = pmc.treeView( parent = self.__form,
                                       width = 350,
                                       abr = False,
-                                      numberOfButtons = 2 )
+                                      numberOfButtons = 3 )
     
     pmc.treeView( self.__layer_tree,
                   e = True,
@@ -285,7 +290,8 @@ class BakeLayerWindow( object ):
     The call from the left click menu goes straight to the function
     in bake_layer_tools
     """
-    bake_layer_tools.add_to_bake_layer( layer = layer )
+    for layer in self.get_selected_layers( ):
+      bake_layer_tools.add_to_bake_layer( layer = layer )
   
   def select_objects( self, evt ):
     """
@@ -429,7 +435,7 @@ class BakeLayerWindow( object ):
   def button_quick_edit_window( self, button ):
     layer = bake_layer_tools.get_bake_layer( button.getLabel( ) )
     
-    widgets.EditBakeLayerWindow( self, layer )
+    quick_edit_window.EditBakeLayerWindow( self, layer )
   
   def button_layer_editor_rename( self, old_name, new_name ):
     node = bake_layer_tools.get_bake_layer( old_name )
@@ -608,8 +614,12 @@ class BakeLayerWindow( object ):
       # Create Button
       if bake_layer_tools.is_high( layer ):
         h_l_button = 'H'
+        low = False
+        rd_button = False
       else:
         h_l_button = 'L'
+        low = True
+        rd_button = bake_layers.get_image( 'ray_dist.png' )
 
       pmc.treeView( self.__layer_tree,
                     e = True,
@@ -618,6 +628,12 @@ class BakeLayerWindow( object ):
       pmc.treeView( self.__layer_tree,
                     e = True,
                     bti = ( layer.name( ), 1, h_l_button ) )
+      
+      
+      pmc.treeView( self.__layer_tree,
+                    e = True,
+                    eb = ( layer, 3, low ),
+                    i = ( layer, 3, rd_button ) )
       
       
       
@@ -653,12 +669,14 @@ class BakeLayerWindow( object ):
                         e = True,
                         eb = ( layer, 2, False ),
                         i = ( layer, 2, '' ) )
+          
+          
         
         else:
           if bake_layer_tools.get_bake_layer( layer ) in connected_layers:
-            image = 'link_icon.png'
+            image = bake_layers.get_image( 'link_icon.png' )
           else:
-            image = 'unlink_icon.png'
+            image = bake_layers.get_image( 'unlink_icon.png' )
   
             
           pmc.treeView( self.__layer_tree,
