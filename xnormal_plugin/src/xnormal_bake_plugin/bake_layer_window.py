@@ -7,10 +7,6 @@ Tyler Good 2011 tylergood@tylergood.net
 import pymel.core as pmc
 import maya.OpenMaya as OpenMaya
 
-import widgets
-from xnormal_bake_plugin.bake_layer_tools import disconnect_layers
-reload( widgets )
-
 import utils
 reload( utils )
 
@@ -21,8 +17,9 @@ print_error = OpenMaya.MGlobal.displayError
 import bake_layer_tools
 reload( bake_layer_tools )
 
-import bake_layer_connection_window
-reload( bake_layer_connection_window )
+# Meta Data
+from xnormal_bake_plugin.tool_info import TOOL_NAME
+from xnormal_bake_plugin.tool_info import VERSION_NUMBER
 
 class BakeLayerWindow( object ):
   """

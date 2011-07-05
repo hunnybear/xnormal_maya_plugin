@@ -13,8 +13,9 @@ import xml.parsers.expat
 
 import pymel.core as pmc
 
-from xnormal_bake_plugin.tool_info import TOOL_NAME
-from xnormal_bake_plugin.tool_info import VERSION_NUMBER
+# Meta Data
+from tool_info import TOOL_NAME
+from tool_info import VERSION_NUMBER
 
 
 ##-------------------------------------

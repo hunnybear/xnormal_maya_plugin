@@ -13,8 +13,9 @@ import maya.OpenMaya as OpenMaya
 # Tool imports
 import bake_layer_node
 
-VERSION_NUMBER = '0.1'
-PARENT_TOOL = 'Bake Layers'
+# Meta Data
+from xnormal_bake_plugin.tool_info import TOOL_NAME
+from xnormal_bake_plugin.tool_info import VERSION_NUMBER
 
 #Because I'm lazy
 

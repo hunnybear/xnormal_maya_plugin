@@ -15,8 +15,9 @@ import maya.OpenMaya as OpenMaya
 import utils
 reload( utils )
 
-from xnormal_bake_plugin.tool_info import TOOL_NAME
-from xnormal_bake_plugin.tool_info import VERSION_NUMBER
+# Meta Data
+from tool_info import TOOL_NAME
+from tool_info import VERSION_NUMBER
 
 print_info = OpenMaya.MGlobal.displayInfo
 print_warning = OpenMaya.MGlobal.displayWarning

@@ -17,6 +17,7 @@ import bake_layer_cmds
 reload( bake_layer_node )
 reload( bake_layer_cmds )
 
+# Meta Data
 from xnormal_bake_plugin.tool_info import TOOL_NAME
 from xnormal_bake_plugin.tool_info import VERSION_NUMBER
 

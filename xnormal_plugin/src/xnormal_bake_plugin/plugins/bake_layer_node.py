@@ -46,6 +46,10 @@ class BakeLayer( OpenMayaMPx.MPxObjectSet ):
   LOW_CONNECT_NAME = 'lc'
   LOW_CONNECT_LONGNAME = 'lowConnect'
   
+  a_max_ray_distance = OpenMaya.MObject( )
+  MAX_RAY_NAME = 'mrd'
+  MAX_RAY_LONGNAME = 'maxRayDistance'
+  
   def set_low_layer( self ):
     # Disconnect all low layers
     
@@ -81,7 +85,8 @@ class BakeLayer( OpenMayaMPx.MPxObjectSet ):
     num_attr.setReadable( True )
     num_attr.setKeyable( False )
     
-    # Not doing this compound for now TODO: figure out what's crashign with compound attrs
+    # Not doing this compound for now
+    # TODO: figure out what's crashign with compound attrs
     
     #cls.a_low_connect = compound_attr.create(
     #                                      cls.LOW_CONNECT_LONGNAME,
@@ -119,10 +124,21 @@ class BakeLayer( OpenMayaMPx.MPxObjectSet ):
     num_attr.setReadable( True )
     num_attr.setKeyable( False )
     
+    cls.a_max_ray_distance = num_attr.create( cls.MAX_RAY_LONGNAME,
+                                              cls.MAX_RAY_NAME,
+                                              OpenMaya.MFnNumericData.k2Float,
+                                              2, 2 
+                                              )
+    num_attr.setWritable( True )
+    num_attr.setStorable( True )
+    num_attr.setReadable( True )
+    num_attr.setKeyable( False )
+    
     # Add the attributes 
     cls.addAttribute( cls.a_bool_is_high )
     cls.addAttribute( cls.a_high_connect )
     cls.addAttribute( cls.a_layer_members )
     cls.addAttribute( cls.a_low_connect )
+    cls.addAttribute( cls.a_max_ray_distance )
 
 
