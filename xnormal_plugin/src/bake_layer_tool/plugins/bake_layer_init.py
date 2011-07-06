@@ -15,7 +15,7 @@ import bake_layer_cmds
 from bake_layer_tool import VERSION_NUMBER
 
 def initializePlugin( mobject ):
-  plugin = OpenMayaMPx.MFnPlugin( mobject, 'Tyler Good', VERSION_NUMBER, 'Any' )
+  plugin = OpenMayaMPx.MFnPlugin( mobject, 'Tyler Good', str( VERSION_NUMBER ), 'Any' )
   
   # Register Node
   try:

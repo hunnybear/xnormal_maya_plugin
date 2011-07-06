@@ -31,7 +31,7 @@ def add_to_env( text ):
   setup_path = os.path.normpath( os.path.join( MAIN_DIR, '..', 'userSetup.py') )
   if os.path.exists( setup_path ):
     print( 'path_exists' )
-    f = open( setup_path, 'w' )
+    f = open( setup_path, 'r' )
     # Line number
     ln = 0
     
@@ -50,7 +50,9 @@ def add_to_env( text ):
     new_file = f.read( )
     for line in text:
       new_file += '{0}\n'.format( line )
-      
+    
+    f.close( )
+    f = open( setup_path, 'w')
     f.write( new_file )
     
   else:
