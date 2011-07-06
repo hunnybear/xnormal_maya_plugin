@@ -1,3 +1,15 @@
+IMPORTANT:
+
+This tool/plugin is still in beta, and at the moment, I am
+still trying to acquire node IDs from Autodesk.  Because of
+this, maya files using the bake layer nodes will break upon
+upgrading to a version of this tool 1.0+.  I will attempt to
+write a tool to fix broken .ma files (.mb, you're on your
+own) once this happens, but I cannot guarantee it will
+happen.
+
+Thanks for Testing!
+
 To Install/run:
 
 > Copy the bake_layer_tool and all contents to your 

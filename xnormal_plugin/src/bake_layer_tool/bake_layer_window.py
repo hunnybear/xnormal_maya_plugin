@@ -259,10 +259,17 @@ class BakeLayerWindow( object ):
     """
     Creat a new bake layer and add all selected objects to it
     """
-    new_layer = pmc.bakeLayer( )
-    utils.add_to_bake_layer( layer = new_layer )
     
-    self.refresh()
+    if not len( pmc.ls( sl = True ) ) < 1:
+    
+      new_layer = pmc.bakeLayer( )
+      utils.add_to_bake_layer( layer = new_layer )
+      
+      self.refresh()
+      
+    else:
+      pmc.error( 'This requires having one or more objects selected' )
+      return False
   
   # Layer Members
   
