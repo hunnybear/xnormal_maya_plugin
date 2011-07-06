@@ -12,16 +12,7 @@ import maya.OpenMayaMPx as OpenMayaMPx
 import bake_layer_node
 import bake_layer_cmds
 
-# For iteration
-
-reload( bake_layer_node )
-reload( bake_layer_cmds )
-
-# Meta Data
-#from ..tool_info import TOOL_NAME
-#from ..tool_info import VERSION_NUMBER
-
-VERSION_NUMBER = '0.1'
+from bake_layer_tool import VERSION_NUMBER
 
 def initializePlugin( mobject ):
   plugin = OpenMayaMPx.MFnPlugin( mobject, 'Tyler Good', VERSION_NUMBER, 'Any' )

@@ -13,13 +13,9 @@ import maya.OpenMaya as OpenMaya
 # Tool imports
 import bake_layer_node
 
-# Meta Data
 
-#from ..tool_info import TOOL_NAME
-#from ..tool_info import VERSION_NUMBER
 
 #Because I'm lazy
-
 print_info = OpenMaya.MGlobal.displayInfo
 print_warning = OpenMaya.MGlobal.displayWarning
 print_error = OpenMaya.MGlobal.displayError

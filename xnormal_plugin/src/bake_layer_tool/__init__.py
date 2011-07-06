@@ -6,47 +6,63 @@ import pymel.core as pmc
 import os
 
 # Meta Data
-from tool_info import TOOL_NAME
-from tool_info import VERSION_NUMBER
-from tool_info import SUITE_NAME
+SUITE_NAME = 'GoodUtils'
+TOOL_NAME = 'EZXBake'
+VERSION_NUMBER = 0.2
+AUTHOR_EMAIL = 'tyler@tylergood.net'
 
 MAIN_DIR = os.path.normpath( os.path.dirname( __file__ ) )
 IMAGES_DIR = os.path.normpath( os.path.join( MAIN_DIR, 'images' ) ).replace( '\\', '/' )
 PLUGIN_DIR = os.path.normpath( os.path.join( MAIN_DIR, 'plugins' ) ).replace( '\\', '/' )
 SHELF_NAME = SUITE_NAME
 
-
-
-tools = [ { 'name' : 'Bake Layer Editor',
-            'command' : 'import bake_layers.bake_layer_window\nbake_layers.bake_layer_window.BakeLayerWindow( )',
-            'image' : None,
-            'sourceType' : 'python' } ]
-
+def setup( ):
+  init( )
+  add_to_env( env_command )
+  
 def init( ):
   load_plugin( True )
   create_shelf( tools )
 
-def create_shelf( tools ):
-  shelf = SHELF_NAME
-  if not __shelf_exists( shelf ):
-    create_shelf_tab( shelf )
-    build_shelf( shelf, tools )
-    __select_shelf( shelf )
+def reinit( ):
+  rebuild_shelf( SHELF_NAME, tools )
 
-def rebuild_self( ):
-  pass
-
-def create_shelf_tab( shelf_name ):
-  if not __shelf_exists( shelf_name ):
-    pmc.mel.addNewShelfTab( shelf_name )
-
-def build_shelf( shelf_name, tools ):
-  for tool in tools:
-    pmc.shelfButton( c = tool['command'],
-                     i = tool['image'],
-                     l = tool['name'],
-                     stp = tool['sourceType'],
-                     p = shelf_name )
+def add_to_env( text ):
+  setup_path = os.path.normpath( os.path.join( MAIN_DIR, '..', 'userSetup.py') )
+  if os.path.exists( setup_path ):
+    print( 'path_exists' )
+    f = open( setup_path, 'w' )
+    # Line number
+    ln = 0
+    
+    lines = f.readlines( )
+    
+    for line in range( len( lines ) ):
+      if lines[ line ] == text[ 0 ]:
+        matches = True
+        for next in range( len ( text ) ):
+          if not lines[ line + next ] == text[ next ]:
+            matches = False
+        # If we've found a match, return true
+        if matches == True:
+          return True
+        
+    new_file = f.read( )
+    for line in text:
+      new_file += '{0}\n'.format( line )
+      
+    f.write( new_file )
+    
+  else:
+    f = open( setup_path, 'w' )
+    new_file = ''
+    for line in text:
+      new_file += '{0}\n'.format( line )
+    
+        
+        
+        
+        
 
 def load_plugin( auto_load = False ):
   add_plugin_dir( )
@@ -64,6 +80,7 @@ def load_plugin( auto_load = False ):
 def get_image( image ):
   full_image = os.path.normpath(os.path.join( IMAGES_DIR , image ) )
   return full_image
+
 def add_plugin_dir( ):
   if os.environ.has_key( 'MAYA_PLUG_IN_PATH' ):
     if not PLUGIN_DIR in os.environ[ 'MAYA_PLUG_IN_PATH' ]:
@@ -71,6 +88,32 @@ def add_plugin_dir( ):
 #==============================================================================
 #  Shelf-related
 #==============================================================================
+
+def create_shelf( tools ):
+  shelf = SHELF_NAME
+  if not __shelf_exists( shelf ):
+    create_shelf_tab( shelf )
+    build_shelf( shelf, tools )
+    __select_shelf( shelf )
+
+def rebuild_shelf( shelf, tools ):
+  if __shelf_exists( shelf ):
+    __clear_shelf_tab( shelf )
+    build_shelf( shelf, tools )
+    __select_shelf( shelf )
+
+def create_shelf_tab( shelf_name ):
+  if not __shelf_exists( shelf_name ):
+    pmc.mel.addNewShelfTab( shelf_name )
+
+def build_shelf( shelf_name, tools ):
+  for tool in tools:
+    pmc.shelfButton( c = tool['command'],
+                     i = tool['image'],
+                     l = tool['name'],
+                     stp = tool['sourceType'],
+                     p = shelf_name )
+    
 def __clear_shelf_tab( shelf_name ):
   shelf = __get_shelf_layout( shelf_name )
   
@@ -139,3 +182,14 @@ def __select_shelf( shelf_name ):
     main_shelf = __get_main_shelf( )
     pmc.shelfTabLayout( main_shelf, e = True, st = shelf_name )
 
+#==============================================================================
+# Data for install
+#==============================================================================
+
+tools = [ { 'name' : 'Bake Layer Editor',
+            'command' : 'import bake_layer_tool.bake_layer_window\nbake_layer_tool.bake_layer_window.BakeLayerWindow( )',
+            'image' : get_image( 'ble_icon.png' ),
+            'sourceType' : 'python' } ]
+
+env_command = [ 'import bake_layer_tool',
+                'bake_layer_tool.init( )' ]

@@ -6,8 +6,6 @@
 import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMaya as OpenMaya
 
-VERSION_NUMBER = '0.1'
-PARENT_TOOL = 'Bake Layers'
 
 # Because I'm lazy
 

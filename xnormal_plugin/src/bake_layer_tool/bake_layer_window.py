@@ -9,22 +9,10 @@ import os
 import pymel.core as pmc
 import maya.OpenMaya as OpenMaya
 
-import bake_layers
-import utils
-reload( utils )
-
-print_info = OpenMaya.MGlobal.displayInfo
-print_warning = OpenMaya.MGlobal.displayWarning
-print_error = OpenMaya.MGlobal.displayError
-
+import bake_layer_tool
 import quick_edit_window
-reload( quick_edit_window )
-import bake_layer_tools
-reload( bake_layer_tools )
+import utils
 
-# Meta Data
-from tool_info import TOOL_NAME
-from tool_info import VERSION_NUMBER
 
 class BakeLayerWindow( object ):
   """
@@ -90,16 +78,7 @@ class BakeLayerWindow( object ):
     
     
     pmc.setParent( self.__form )
-    
-    #self.__scroll_layout = pmc.scrollLayout( horizontalScrollBarThickness = 0,
-    #                                         backgroundColor = [ 0.165, 0.165, 0.165 ],
-    #                                         )
-    
-    #self.__grid_layout = pmc.gridLayout( allowEmptyCells = False,
-    #                                      autoGrow = True,
-    #                                      numberOfColumns = 1,
-    #                                      cellWidthHeight = [ 350, 20 ] )
-    
+     
     self.__layer_tree = pmc.treeView( parent = self.__form,
                                       width = 350,
                                       abr = False,
@@ -120,6 +99,10 @@ class BakeLayerWindow( object ):
     pmc.treeView( self.__layer_tree,
                   e = True,
                   pc = ( 2, self.button_connection_edit ) )
+    
+    pmc.treeView( self.__layer_tree,
+                  e = True,
+                  pc = ( 3, self.button_quick_edit_window ) )
     
     left_click_menu = pmc.popupMenu( button = 3, parent = self.__layer_tree )
 
@@ -277,7 +260,7 @@ class BakeLayerWindow( object ):
     Creat a new bake layer and add all selected objects to it
     """
     new_layer = pmc.bakeLayer( )
-    bake_layer_tools.add_to_bake_layer( layer = new_layer )
+    utils.add_to_bake_layer( layer = new_layer )
     
     self.refresh()
   
@@ -288,10 +271,10 @@ class BakeLayerWindow( object ):
     Add objects to selected layer handler
     This only handles the call from the Layers menu at the top of the window.
     The call from the left click menu goes straight to the function
-    in bake_layer_tools
+    in utils
     """
     for layer in self.get_selected_layers( ):
-      bake_layer_tools.add_to_bake_layer( layer = layer )
+      utils.add_to_bake_layer( layer = layer )
   
   def select_objects( self, evt ):
     """
@@ -303,10 +286,10 @@ class BakeLayerWindow( object ):
     if evt == False:
 
       for layer in self.get_selected_layers( ):
-        objects.extend( bake_layer_tools.get_members( layer ) )
+        objects.extend( utils.get_members( layer ) )
     
     else:
-      objects = bake_layer_tools.get_members( evt )
+      objects = utils.get_members( evt )
     pmc.select( objects )
   
   def remove_objects( self, evt ):
@@ -314,11 +297,11 @@ class BakeLayerWindow( object ):
     Add objects to selected layer handler
     This only handles the call from the Layers menu at the top of the window.
     The call from the left click menu goes straight to the function
-    in bake_layer_tools
+    in utils
     """
 
     for layer in self.get_selected_layers( ):
-      bake_layer_tools.remove_from_bake_layer( layer )
+      utils.remove_from_bake_layer( layer )
   
   # Remove Layers
   
@@ -336,7 +319,7 @@ class BakeLayerWindow( object ):
     bake_layers = pmc.ls( typ = 'BakeLayer' )
     
     for layer in bake_layers:
-      if len( bake_layer_tools.get_members( layer ) ) < 1:
+      if len( utils.get_members( layer ) ) < 1:
         pmc.delete( layer )
         
     self.refresh( )
@@ -351,7 +334,7 @@ class BakeLayerWindow( object ):
     low_layers = [ ]
     
     for layer in self.get_selected_layers( ):
-      if bake_layer_tools.is_high( layer ):
+      if utils.is_high( layer ):
         high_layers.append( layer )
         
       else:
@@ -361,17 +344,17 @@ class BakeLayerWindow( object ):
       pmc.error( 'Connecting Bake Layers requires one and only one low layer.' )
       return False
 
-    bake_layer_tools.connect_layers( low_layers[ 0 ], high_layers )
+    utils.connect_layers( low_layers[ 0 ], high_layers )
   
   # Bake layer
 
   def do_bake_layer( self, layer ):
     """
     Bake the bake layer.  Gets some settings from the xml settings file saved
-    in prefs, then passes them to the bake_layer_tools function
+    in prefs, then passes them to the utils function
     """
     print layer
-    bake_layer_tools.bake_layer( layer,
+    utils.bake_layer( layer,
                                  bake_ao = utils.get_bake_ao( ),
                                  bake_normals = utils.get_bake_normals( ) )
     
@@ -432,13 +415,13 @@ class BakeLayerWindow( object ):
     self.refresh_button_state( )
     
   # After discovering treeView, not using this any more
-  def button_quick_edit_window( self, button ):
-    layer = bake_layer_tools.get_bake_layer( button.getLabel( ) )
+  def button_quick_edit_window( self, layer, arg ):
+    layer = utils.get_bake_layer( layer )
     
     quick_edit_window.EditBakeLayerWindow( self, layer )
   
   def button_layer_editor_rename( self, old_name, new_name ):
-    node = bake_layer_tools.get_bake_layer( old_name )
+    node = utils.get_bake_layer( old_name )
     node.rename( new_name )
     
     self.refresh( )
@@ -446,12 +429,12 @@ class BakeLayerWindow( object ):
   def button_type_change( self, layer, arg ):
 
 
-    node = bake_layer_tools.get_bake_layer(layer)
+    node = utils.get_bake_layer(layer)
     
-    if bake_layer_tools.is_high( layer ):
-      bake_layer_tools.set_low( layer )
+    if utils.is_high( layer ):
+      utils.set_low( layer )
     else:
-      bake_layer_tools.set_high( layer )
+      utils.set_high( layer )
       
     self.refresh( )
   
@@ -461,13 +444,13 @@ class BakeLayerWindow( object ):
                                    q = True,
                                    si = True )[ 0 ]
                                                               
-    if bake_layer_tools.are_connected( layer, selected_layer ):
-      bake_layer_tools.disconnect_layers( [ layer, selected_layer ] )
+    if utils.are_connected( layer, selected_layer ):
+      utils.disconnect_layers( [ layer, selected_layer ] )
     else:
-      if bake_layer_tools.is_high( selected_layer ):
-        bake_layer_tools.connect_layers( layer, selected_layer )
+      if utils.is_high( selected_layer ):
+        utils.connect_layers( layer, selected_layer )
       else:
-        bake_layer_tools.connect_layers( selected_layer, layer )
+        utils.connect_layers( selected_layer, layer )
     
     self.refresh_button_state()
 
@@ -486,7 +469,7 @@ class BakeLayerWindow( object ):
     else:
       selection = True
     
-    is_high = bake_layer_tools.is_high( layer )
+    is_high = utils.is_high( layer )
     
     if len( self.get_selected_layers( ) ) < 2:
       mult_select = False
@@ -516,7 +499,7 @@ class BakeLayerWindow( object ):
       
     pmc.menuItem( label = 'Set layer to High-poly',
                   enable = enable,
-                  command = pmc.Callback( bake_layer_tools.set_high,
+                  command = pmc.Callback( utils.set_high,
                                           layer ) )
     
     if is_high:
@@ -526,7 +509,7 @@ class BakeLayerWindow( object ):
 
     pmc.menuItem( label = 'Set layer to Low-poly',
                   enable = enable,
-                  command = pmc.Callback( bake_layer_tools.set_low,
+                  command = pmc.Callback( utils.set_low,
                                           layer ) )
     pmc.menuItem( divider = True )
     
@@ -545,12 +528,12 @@ class BakeLayerWindow( object ):
     
     pmc.menuItem( label = 'Add selected objects',
                   enable = enable,
-                  command = pmc.Callback( bake_layer_tools.add_to_bake_layer,
+                  command = pmc.Callback( utils.add_to_bake_layer,
                                           layer ) )
     
     pmc.menuItem( label = 'Remove selected objects',
                   enable = enable,
-                  command = pmc.Callback( bake_layer_tools.remove_from_bake_layer,
+                  command = pmc.Callback( utils.remove_from_bake_layer,
                                           layer ) )
     
     pmc.menuItem( label = 'Select Objects',
@@ -575,7 +558,7 @@ class BakeLayerWindow( object ):
       return [ ]
     else:
       for item in pmc.treeView( self.__layer_tree, q = True, si = True ) :
-        selection.append( bake_layer_tools.get_bake_layer( item ) )
+        selection.append( utils.get_bake_layer( item ) )
         
     return selection
 
@@ -612,14 +595,14 @@ class BakeLayerWindow( object ):
     for layer in bake_layers:
       
       # Create Button
-      if bake_layer_tools.is_high( layer ):
+      if utils.is_high( layer ):
         h_l_button = 'H'
         low = False
         rd_button = False
       else:
         h_l_button = 'L'
         low = True
-        rd_button = bake_layers.get_image( 'ray_dist.png' )
+        rd_button = bake_layer_tool.get_image( 'ray_dist.png' )
 
       pmc.treeView( self.__layer_tree,
                     e = True,
@@ -654,17 +637,17 @@ class BakeLayerWindow( object ):
     connected_layers = [ ]
     
     if one_selected:
-      selected_is_high = bake_layer_tools.is_high( sel_layer )
+      selected_is_high = utils.is_high( sel_layer )
       if selected_is_high:
-        connected_layers = bake_layer_tools.get_connected_low_layers( sel_layer )
+        connected_layers = utils.get_connected_low_layers( sel_layer )
       else:
-        connected_layers = bake_layer_tools.get_connected_high_layers( sel_layer )
+        connected_layers = utils.get_connected_high_layers( sel_layer )
     
 
     for layer in bake_layers:
       
       if one_selected == True:
-        if selected_is_high == bake_layer_tools.is_high( layer ):
+        if selected_is_high == utils.is_high( layer ):
           pmc.treeView( self.__layer_tree,
                         e = True,
                         eb = ( layer, 2, False ),
@@ -673,10 +656,10 @@ class BakeLayerWindow( object ):
           
         
         else:
-          if bake_layer_tools.get_bake_layer( layer ) in connected_layers:
-            image = bake_layers.get_image( 'link_icon.png' )
+          if utils.get_bake_layer( layer ) in connected_layers:
+            image = bake_layer_tool.get_image( 'link_icon.png' )
           else:
-            image = bake_layers.get_image( 'unlink_icon.png' )
+            image = bake_layer_tool.get_image( 'unlink_icon.png' )
   
             
           pmc.treeView( self.__layer_tree,

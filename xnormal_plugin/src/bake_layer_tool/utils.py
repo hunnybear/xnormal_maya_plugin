@@ -4,19 +4,442 @@ Created on Jul 2, 2011
 @author: Tyler
 '''
 
+# TODO: Just combined utils and bake_layer_tools, some things may be redundant, fix this.
+
 import os
 import os.path
 import _winreg
+import subprocess
 
 import xml.dom.minidom
 import xml.parsers.expat
 
 import pymel.core as pmc
 
-# Meta Data
-from tool_info import TOOL_NAME
-from tool_info import VERSION_NUMBER
+HIGH_CONNECT_ATTR = 'hc'
+LOW_CONNECT_ATTR = 'lc'
+LAYER_MEMBERS_ATTR = 'lm'
 
+#==============================================================================
+# Layer Members
+#==============================================================================
+
+def select_from_bake_layer( layer ):
+  
+  node = get_bake_layer( layer )
+  
+  if node == None:
+    pmc.error( 'select_from_bake_layer requires one "BakeLayer" node.')
+    
+
+def remove_from_bake_layer( layer, objects = None ):
+  if objects == None:
+    objects = pmc.ls( sl = True )
+
+  node = get_bake_layer( layer )
+  if node == False:
+    pmc.error( 'You must specify a Bake Layer for this command' )
+    return False
+      
+  connect_attr = node.attr( LAYER_MEMBERS_ATTR )
+  
+
+  for plug in pmc.connectionInfo( connect_attr, destinationFromSource = True ):
+    if pmc.PyNode( plug.split( '.' )[ 0 ] ) in objects:
+    
+      pmc.disconnectAttr( connect_attr, plug )
+
+def add_to_bake_layer( layer = None, objects = None ):
+
+  
+  # Get the node for the bake Layer  
+  
+  layer_node = get_bake_layer( layer )
+  if layer_node == None:
+    pmc.error( 'add_to_bake_layer requires one "BakeLayer" node.')
+  
+  # get the list of nodes for the objects
+  
+  if objects == None:
+    pmc.warning( 'No objects specified, using selection' )
+    obj_list = pmc.ls( sl = True, typ = 'transform' ) 
+  
+  elif isinstance( objects, pmc.nt.Transform ):
+    obj_list = [ objects ]
+  
+  elif isinstance( pmc.PyNode( objects ), pmc.nt.Transform ):
+    obj_list = [ pmc.PyNode( objects ) ]
+    
+  elif isinstance( object, [ tuple, list ] ):
+    obj_list = objects
+    
+  else:
+    pmc.error( 'Objects supplied for add_to_bake_layer command were invalid' )
+
+  if len( obj_list ) < 1:
+    pmc.error( 'No valid objects were supplied or selected for the bake_layer_command' )
+  
+  # Make connections
+    
+  for obj in obj_list:
+    
+    multi_connect(layer_node, 'lm', obj, 'bake')
+    
+def get_members( layer ):
+  layer_node = get_bake_layer(layer)
+  
+  return layer_node.attr( LAYER_MEMBERS_ATTR ).listConnections( )
+  
+  
+
+#==============================================================================
+# Edit Layer
+#==============================================================================
+    
+def set_high( layer ):
+  layer_node = get_bake_layer( layer )
+
+  layer_node.setAttr( 'hp', True )
+  
+  layer_node.attr( HIGH_CONNECT_ATTR ).disconnect( )
+  
+def set_low( layer ):
+  layer_node = get_bake_layer( layer )
+
+  layer_node.setAttr( 'hp', False )
+  
+  for attr in layer_node.listAttr( ):
+    if attr.name( )[ :len( LOW_CONNECT_ATTR ) ] == LOW_CONNECT_ATTR:
+      attr.disconnect( )
+      attr.delete( )
+  
+def connect_layers( low, high ):
+  
+  # Check low-poly layer
+  low_layer = get_bake_layer ( low )
+  if low_layer == None or is_high( low_layer ):
+    pmc.error( 'connect_layers requires one low-poly Bake Layer be specified.' )
+    return False
+
+  high_layers = [ ]
+
+  # Handle lists of high poly layers
+  if isinstance(high, ( tuple, list ) ):
+    
+    
+    for lay in high:
+      hl = get_bake_layer( lay )
+      
+      if not hl == False:
+        high_layers.append( hl )
+  
+  # Handle single high poly layers
+  else:
+    hl = get_bake_layer( high )
+    
+    if not hl == None:
+      if is_high( hl ):
+        high_layers.append( hl )
+      
+  if len( high_layers ) < 1:
+    pmc.error( 'connect_layers requires at least one high-poly Bake Layer be specified.' )
+    return False
+  
+  connected_high_layers = get_connected_high_layers( low_layer )
+  
+  for lay in high_layers:
+    
+    if lay not in connected_high_layers:
+      multi_connect(low_layer, HIGH_CONNECT_ATTR, lay, LOW_CONNECT_ATTR )
+  
+    
+def disconnect_layers( layers ):
+  layer_nodes = [ ]
+  for layer in layers:
+    node = get_bake_layer( layer )
+    if not node == False:
+      layer_nodes.append( node )
+        
+  for layer in layer_nodes:
+    connect_attr = layer.attr( HIGH_CONNECT_ATTR )
+    
+
+    for plug in pmc.connectionInfo( connect_attr, destinationFromSource = True ):
+      if pmc.PyNode( plug.split( '.' )[ 0 ] ) in layer_nodes:
+      
+        pmc.disconnectAttr( connect_attr, plug )
+        
+def set_bake_ray_dist( layer, dist ):
+  node = get_bake_layer( layer )
+  node.setAttr( 'mrd', dist )
+
+      
+#==============================================================================
+# Query Layer
+#==============================================================================
+
+def get_front_ray_dist( layer ):
+  node = get_bake_layer( layer )
+  
+  return node.getAttr( 'mrd' )[ 0 ]
+
+def get_back_ray_dist( layer ):
+  node = get_bake_layer( layer )
+  
+  return node.getAttr( 'mrd' )[ 1 ]
+
+def are_connected( layer1, layer2 ):
+  
+  node1 = get_bake_layer( layer1 )
+  node2 = get_bake_layer( layer2 )
+  
+  if is_high( node1 ):
+    if node2 in get_connected_low_layers( node1 ):
+      return True
+    
+  else:
+    if node2 in get_connected_high_layers( node1 ):
+      return True
+  
+  return False    
+  
+def is_high( layer ):
+  layer_node = get_bake_layer(layer)
+
+  return layer_node.getAttr( 'hp' )
+
+def get_connected_low_layers( layer ):
+  
+  node = get_bake_layer(layer)
+  
+  low_layers = [ ]
+  
+  if node == False:
+    pmc.error( 'get_connected_low_layers requires one Bake Layer node.' )
+    return False
+  
+  for attr in node.listAttr( ):
+    attr_name = attr.name( ).split( '.' )[ 1 ]
+    if( attr_name[ : len( LOW_CONNECT_ATTR )] == LOW_CONNECT_ATTR and
+        attr.isDestination( ) and
+        isinstance( attr.inputs( )[ 0 ], pmc.nt.BakeLayer ) ) :     
+      low_layers.append( attr.inputs( )[ 0 ] )
+      
+  return low_layers
+      
+def get_connected_high_layers( layer ):
+  
+  node = get_bake_layer( layer )
+  
+  high_layers = [ ]
+  
+  if node == False:
+    pmc.error( 'get_connected_high_layers requires one Bake Layer node.' )
+    return False  
+    
+  conn_attr = node.attr( HIGH_CONNECT_ATTR )
+  
+  for obj in conn_attr.listConnections( ):
+    if isinstance(obj, pmc.nt.BakeLayer ):
+      high_layers.append( obj )
+      
+  return high_layers
+    
+#==============================================================================
+# Baking and Export
+#==============================================================================
+    
+def export_layer( layer ):
+  
+  layer_node = get_bake_layer( layer )
+  members = get_members( layer_node )
+  
+  pmc.select( clear = True )
+  
+  meshes = [ ]
+  
+  project_dir =  pmc.workspace.getPath( )
+  data_dir = project_dir + r'/xn_bake_data'
+  
+  if not os.path.exists( data_dir ):
+    os.mkdir( data_dir )
+    
+  if not members == None:
+    for orig_obj in members:
+      
+      new_obj = pmc.duplicate( orig_obj )[ 0 ]
+      
+      pmc.delete( new_obj, constructionHistory = True )
+      
+      relatives = new_obj.listRelatives( )
+      
+      for r in relatives:
+        if r.nodeType( ) == 'mesh':
+          
+          meshes.append( new_obj )
+          
+  bake_mesh = make_bake_mesh( meshes )
+  
+  if bake_mesh == False:
+    return False
+  
+  if not os.path.exists( data_dir + r'/xnezbake/' ):
+    os.mkdir( data_dir + r'/xnezbake/' )
+    
+  pmc.select( bake_mesh )
+  
+  # Check that OBJ Export is enabled
+  if not pmc.pluginInfo( 'objExport.mll', q = True, loaded = True ):
+    pmc.loadPlugin( 'objExport.mll' )
+  
+  output = pmc.exportSelected( data_dir + r'/xnezbake/' + layer_node.name( ) + '.obj',
+                               force = True,
+                               options = 'groups=0;ptgroups=0;materials=0;smoothing=1;normals=1',
+                               type = 'OBJexport' )
+  
+  pmc.delete( )
+
+  return output
+
+def get_base_export_file( layer ):
+  
+  layer_node = get_bake_layer(layer )
+  
+  project_dir =  pmc.workspace.getPath( )
+  data_dir = project_dir + '/xn_bake_data'
+  
+  if not os.path.exists( data_dir + r'/xnezbake/' ):
+    os.mkdir( data_dir + r'/xnezbake/' )
+    
+  return data_dir + r'/xnezbake/' + layer_node.name( ) + '.tga'
+
+def make_bake_mesh( meshes, name = '' ):
+  """
+  Turn one or more meshes into a single mesh for export to xNormal
+  """
+  
+  arg_string = ''
+  meshes = list( set( meshes ) )
+  
+  pmc.select( clear = True )
+  
+  if len( meshes ) == 0:
+    return False
+  
+  if len( meshes ) > 1:
+
+    if name == '':
+      name = 'bake_mesh'
+      
+    merged = pmc.polyUnite( meshes, ch = False, name = name )
+    
+  else:
+    merged = meshes[ 0 ]
+    
+  tr = pmc.polyTriangulate( merged, ch = False)
+  
+  return merged
+
+def bake_layer( low_layer,
+                bake_ao = False,
+                bake_normals = False ):
+  
+  # Layer/obj Related Vars
+  
+  low_node = get_bake_layer( low_layer )
+  low_export = export_layer( low_node )
+  if low_export == False:
+    return False
+  low_mesh = LowMesh( low_export,
+                      max_ray_distance_back=str( get_back_ray_dist( low_node ) ),
+                      max_ray_distance_front=str( get_front_ray_dist( low_node ) ) )
+  
+  base_file = get_base_export_file( low_node )
+  
+  high_exports = [ ]
+  
+  # xNormal related vars
+  xn_loc = get_xn_location( )
+  if xn_loc == None:
+    pmc.error( 'No location for xNormal has been set' )
+    return False
+  
+  for high in get_connected_high_layers( low_node ):
+    ex_obj = export_layer( high )
+    if not ex_obj == False:
+      to_export = HighMesh( ex_obj )
+      if not to_export == False:
+        high_exports.append( to_export  )
+        
+        
+    
+    
+  # The XML DOM object
+  config = XNConfigSettings( )
+  
+  # xml settings file for xNormal
+  xml_path = config.file_path
+  
+  # set up the XML file for baking
+  print low_mesh
+  print high_exports
+  config.set_bake_meshes( [ low_mesh ], high_exports ) 
+  config.set_base_file( base_file )
+  
+  # Tell Xn which maps to bake
+  config.bake_ao( bake_ao )
+  config.bake_normals( bake_normals )
+
+  args = eval( '[ r"' + xn_loc + '", r"' + xml_path + '" ]' ) 
+
+  # Ship it!
+  subprocess.Popen( args )
+    
+#==============================================================================
+# Helper Functions
+#==============================================================================
+
+def multi_connect( out_node, out_attr_name,
+                   in_node, in_attr_name ):
+  
+  # TODO: prevent connection if connection already exists
+  
+  i = 0
+  in_plug = None
+  
+  while in_plug == None:
+    
+    curr_attr = in_attr_name + str( i )
+    
+    if not in_node.hasAttr( curr_attr ):
+      
+      in_plug = in_node.addAttr( curr_attr,
+                                 at = 'bool' )
+      
+      
+    else:
+      if in_node.attr( curr_attr ).isDestination( ):
+        i = i + 1
+      
+      else:
+        in_plug = in_node.attr( curr_attr )
+        
+  out_plug = out_node.attr( out_attr_name )
+  
+  out_plug.connect( in_plug )
+      
+     
+
+def get_bake_layer( layer ):
+  
+  if isinstance( layer, pmc.nt.BakeLayer ):
+    return layer
+  
+  elif isinstance( pmc.PyNode( layer ), pmc.nt.BakeLayer ):
+    return pmc.PyNode( layer )
+  
+  else:
+    return None
 
 ##-------------------------------------
 ## generic config file utilities
@@ -297,11 +720,11 @@ def set_bake_ao( setting ):
 
 def get_bake_normals( ):
   prefs = BakeLayersPrefs( )
-  return prefs.get_bake_normals( )
+  return bool( prefs.get_bake_normals( ) )
   
 def get_bake_ao( ):
   prefs = BakeLayersPrefs( )
-  return prefs.get_bake_ao( )
+  return bool( prefs.get_bake_ao( ) )
 
 def get_xn_location( ):
   prefs = BakeLayersPrefs( )
@@ -310,6 +733,8 @@ def get_xn_location( ):
 def set_xn_location( location ):
   prefs = BakeLayersPrefs( )
   prefs.set_xn_location( location )
+
+# Creates a prefs xml file for the bake_layer_tool stuff
 
 class BakeLayersPrefs( XMLSettings ):
   PREFS_DIR = pmc.internalVar( userPrefDir = True ) + r'xn_bake_prefs.cfg'
@@ -424,20 +849,21 @@ class XNConfigSettings( object ):
         low_objs.append( mesh.getAttribute( 'File' ) )
 
       # Set settings on meshes to use for bake
-      
+      print low_meshes
       for mesh in low_meshes:
         if mesh in low_objs:
           for xml_mesh in self.low_meshes:
-            if xml_mesh.getAttribute( 'File' ) == mesh:
+            if xml_mesh.getAttribute( 'File' ) == mesh.get_obj( ):
               xml_mesh.setAttribute( 'Visible', 'true' )
+              for k, v in mesh.settings.items( ):
+                xml_mesh.setAttribute( k, v )
 
         else:
           new_node = self.config.createElement( "Mesh" )
-          mesh_obj = LowMesh ( mesh )
-          for k, v in mesh_obj.settings.items( ):
+          for k, v in mesh.settings.items( ):
               new_node.setAttribute( k, v )
           self.low_node.appendChild( new_node )
-          self.low_meshes.append( mesh_obj )
+          self.low_meshes.append( mesh )
               
 
       for mesh in high_meshes:
@@ -446,13 +872,14 @@ class XNConfigSettings( object ):
           for xml_mesh in self.high_meshes:
             if xml_mesh.getAttribute( 'File' ) == mesh:
               xml_mesh.setAttribute( 'Visible', 'true' )
+              for k, v in mesh.settings.items( ):
+                xml_mesh.setAttribute( k , v )
         else:
           new_node = self.config.createElement( "Mesh" )
-          mesh_obj = HighMesh( mesh )
-          for k, v in mesh_obj.settings.items( ):
+          for k, v in mesh.settings.items( ):
               new_node.setAttribute( k, v )
           self.high_node.appendChild( new_node )
-          self.high_meshes.append( mesh_obj )
+          self.high_meshes.append( mesh )
 
         self.write_config( )
 

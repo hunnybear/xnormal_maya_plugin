@@ -1,0 +1,17 @@
+To Install/run:
+
+> Copy the bake_layer_tool and all contents to your 
+  <Documents>/maya/<version>/scripts Directory
+  
+> Open maya, and in the Command Line or script editor,
+  execute the following lines of Python:
+  
+  import bake_layer_tool
+  bake_layer_tool.setup( )
+  
+> This should create a new shelf.  To work with bake Layers,
+  either click the "BLE" button in this new shelf, or input
+  the following line of Python in either the script editor
+  or the command line:
+  
+  bake_layer_tool.bake_layer_window.BakeLayerWindow( )
