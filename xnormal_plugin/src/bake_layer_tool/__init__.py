@@ -1,7 +1,6 @@
 """
 Bake Layers initialization
 """
-
 import pymel.core as pmc
 import os
 
@@ -59,12 +58,7 @@ def add_to_env( text ):
     f = open( setup_path, 'w' )
     new_file = ''
     for line in text:
-      new_file += '{0}\n'.format( line )
-    
-        
-        
-        
-        
+      new_file += '{0}\n'.format( line )  
 
 def load_plugin( auto_load = False ):
   add_plugin_dir( )
@@ -95,8 +89,8 @@ def create_shelf( tools ):
   shelf = SHELF_NAME
   if not __shelf_exists( shelf ):
     create_shelf_tab( shelf )
-    build_shelf( shelf, tools )
-    __select_shelf( shelf )
+  build_shelf( shelf, tools )
+  __select_shelf( shelf )
 
 def rebuild_shelf( shelf, tools ):
   if __shelf_exists( shelf ):
@@ -110,12 +104,13 @@ def create_shelf_tab( shelf_name ):
 
 def build_shelf( shelf_name, tools ):
   for tool in tools:
-    pmc.shelfButton( c = tool['command'],
-                     i = tool['image'],
-                     l = tool['name'],
-                     stp = tool['sourceType'],
-                     p = shelf_name )
-    
+    if not __shelf_button_exists( shelf_name, tool[ 'name'] ):
+      pmc.shelfButton( c = tool['command'],
+                       i = tool['image'],
+                       l = tool['name'],
+                       stp = tool['sourceType'],
+                       p = shelf_name )
+
 def __clear_shelf_tab( shelf_name ):
   shelf = __get_shelf_layout( shelf_name )
   
@@ -171,9 +166,27 @@ def __shelf_exists( shelf_name ):
   
   tabs = pmc.shelfTabLayout( main_shelf, q = True, ca = True )
   if not tabs is None:
-    exists = ( shelf_name in tabs )
-    
+    exists = ( shelf_name in tabs )    
   return exists
+
+def __shelf_button_exists( shelf_name, button_name ):
+    
+    exists = False
+    
+    main_shelf = __get_main_shelf( )
+    if main_shelf is None:
+      return False
+    
+    tabs = pmc.shelfTabLayout( main_shelf, q = True, ca = True )
+    if not tabs is None:
+      __select_shelf( shelf_name )
+      full_shelf = '{0}|{1}'.format( main_shelf, shelf_name )
+      buttons = pmc.shelfLayout( full_shelf, q = True, ca = True )
+      for button in buttons:
+        full_button = '{0}|{1}'.format( full_shelf, button )
+        if button_name == pmc.shelfButton( full_button, q = True, l = True ):
+          return True
+
 
 def __select_shelf( shelf_name ):
   """
@@ -193,5 +206,5 @@ tools = [ { 'name' : 'Bake Layer Editor',
             'image' : get_image( 'ble_icon.png' ),
             'sourceType' : 'python' } ]
 
-env_command = [ 'import bake_layer_tool',
-                'bake_layer_tool.init( )' ]
+env_command = [ 'import {0}'.format( __name__ ),
+                '{0}.init( )'.format( __name__ ) ]
