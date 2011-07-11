@@ -7,7 +7,7 @@ import os
 # Meta Data
 SUITE_NAME = 'GoodUtils'
 TOOL_NAME = 'EZXBake'
-VERSION_NUMBER = 0.2
+VERSION_NUMBER = '0.2.1'
 AUTHOR_EMAIL = 'tyler@tylergood.net'
 
 MAIN_DIR = os.path.normpath( os.path.dirname( __file__ ) )
@@ -145,8 +145,10 @@ def __get_main_shelf( ):
   """
   Return paht to main shelfTabLayout
   """
-  
-  main_shelf = pmc.melGlobals[ 'gShelfTopLevel' ]
+  try:
+    main_shelf = pmc.melGlobals[ 'gShelfTopLevel' ]
+  except KeyError:
+    return None
   if pmc.shelfTabLayout( main_shelf, ex = True ):
     return main_shelf
   

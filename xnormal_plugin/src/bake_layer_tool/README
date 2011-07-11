@@ -26,4 +26,14 @@ To Install/run:
   the following line of Python in either the script editor
   or the command line:
   
+  import bake_layer_tool.bake_layer_window
   bake_layer_tool.bake_layer_window.BakeLayerWindow( )
+  
+  
+VERSION HISTORY:
+
+0.2:
+  * Initial Beta Release
+  
+0.2.1:
+  * Fixed reported Maya startup bug
