@@ -2,7 +2,7 @@ git repo Readme:
 
 This repo holds an eclipse project, and thus contains several folders which
 you do not need to run the script.  To install the script for use (not 
-development), only use the folders below 'src/'.  Instructions for installation
-are located in 'src/'.
+development), only use the folders below 'xnormal_pluginsrc/'.  Instructions 
+for installation are located in 'xnormal_plugin/src/'.
 
 Thanks 
